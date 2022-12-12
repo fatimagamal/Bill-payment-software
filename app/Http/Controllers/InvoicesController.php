@@ -2,12 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\mailNotify;
+use Exception;
+use Illuminate\Support\Facades\Mail;
 use App\Models\invoices;
 use App\Models\invoices_attachement;
 use App\Models\invoices_details;
 use App\Models\products;
 use App\Models\sections;
+use App\Models\User;
 use Illuminate\Http\Request;
+use App\Notifications\AddInvoices;
+use Illuminate\Support\Facades\Notification;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -110,6 +117,33 @@ class InvoicesController extends Controller
             $invoice_number = $request["invoice_number"];
             $request->pic->move(public_path('attachements/' . $invoice_number), $imag_name);
         }
+        ////////////////////////////////////////////////////////////////////////////////////notification
+        // $user =User::get();///لو عايز ابعت لكل ال يوزر الي عندي
+        // $user =User::find(Auth::user()->id);//لو عايز ابعت اشعار للي عمل الفاتوره بس
+        $user = User::get();
+        $invoicesId = invoices::latest()->first()->id;
+        Notification::send($user, (new AddInvoices($invoicesId)));
+
+        ///////////////////////////////send email/////////////////////////////////
+        $url="http://127.0.0.1:8000/invoicesDetails/".$invoicesId;
+        $data = [
+            'subject' => '  مرحبا عزيزي العميل',
+            'body' => " تم اضافه فاتوره جديده",
+            'action' => $url,
+            'line' => "شكرا لاستخدامك موقعنا لتحصيل الفواتير"
+        ];
+
+        try {
+            Mail::to('gamalfatma351@gmail.com')->send(new mailNotify($data));
+            // return response()->json(['good']);
+            return back();
+        } catch (Exception $th) {
+            return response()->json(['fail']);
+        }
+
+
+
+        ////////////////////////////////////////////////////////////////
 
         session()->flash('add', 'تم اضافه الفاتوره بنجاح');
 
@@ -124,9 +158,13 @@ class InvoicesController extends Controller
      * @param  \App\Models\invoices  $invoices
      * @return \Illuminate\Http\Response
      */
-    public function show(invoices $invoices)
+    public function mark_as_read_all()
     {
-        //
+        $userUnRead_notifications = Auth::user()->unreadNotifications;
+        if ($userUnRead_notifications) {
+            $userUnRead_notifications->markAsRead();
+            return back();
+        }
     }
 
     /**
@@ -226,7 +264,6 @@ class InvoicesController extends Controller
             session()->flash('archiveInvoices');
             return redirect('invoices');
         }
-        
     }
 
 

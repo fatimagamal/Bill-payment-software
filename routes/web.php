@@ -14,7 +14,8 @@ use App\Http\Controllers\InvoiceReportController;
 use App\Http\Controllers\CustomerReportController;
 use App\Models\invoices_details;
 use App\Http\Controllers\HomeController;
-
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,9 @@ Route::delete('invoices', [InvoicesController::class, 'destroy']);
 Route::get('invoicesPayment/{id}', [InvoicesController::class, 'invoicesPayment']);
 Route::post('changeInvoicesPayment', [InvoicesController::class, 'changeInvoicesPaymentStatus']);
 
+
+////////////////////////////////////////////////////////////////////
+Route::get('mark_as_read_all', [InvoicesController::class, 'mark_as_read_all']);
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -108,3 +112,9 @@ Route::post('customerReport', [CustomerReportController::class, 'search']);
 /////////////////////////////////////////////////////////////////////////////////////////////
 Route::get('/index', [AdminController::class, 'index']);
 Route::get('home', [HomeController::class, 'index']);
+
+////////////////////////////////////////////////////////////////////////permission
+Route::group(['middleware' => ['auth']], function() {
+    Route::resource('roles', RoleController::class);
+    Route::resource('users', UserController::class);
+});
